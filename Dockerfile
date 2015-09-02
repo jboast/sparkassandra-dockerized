@@ -1,34 +1,34 @@
 FROM debian:jessie
 
 # install and configure supervisor
-RUN apt-get update && apt-get install -y supervisor && mkdir -p /var/log/supervisor
+RUN apt-get update && apt-get install -y --no-install-recommends supervisor && mkdir -p /var/log/supervisor
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 # install java & curl
-RUN echo "deb http://ppa.launchpad.net/webupd8team/java/ubuntu trusty main" > /etc/apt/sources.list.d/webupd8team-java.list
-RUN echo "deb-src http://ppa.launchpad.net/webupd8team/java/ubuntu trusty main" >> /etc/apt/sources.list.d/webupd8team-java.list
-RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys EEA14886
-RUN apt-get -y update
-RUN /bin/echo debconf shared/accepted-oracle-license-v1-1 select true | /usr/bin/debconf-set-selections
-RUN DEBIAN_FRONTEND=noninteractive apt-get -y install oracle-java7-installer oracle-java7-set-default curl
+RUN echo "deb http://ppa.launchpad.net/webupd8team/java/ubuntu trusty main" > /etc/apt/sources.list.d/webupd8team-java.list && \
+ echo "deb-src http://ppa.launchpad.net/webupd8team/java/ubuntu trusty main" >> /etc/apt/sources.list.d/webupd8team-java.list && \
+ apt-key adv --keyserver keyserver.ubuntu.com --recv-keys EEA14886 && \
+ apt-get -y update && \
+ /bin/echo debconf shared/accepted-oracle-license-v1-1 select true | /usr/bin/debconf-set-selections && \
+ DEBIAN_FRONTEND=noninteractive apt-get -y --no-install-recommends install oracle-java7-installer oracle-java7-set-default curl
 
 # download and install spark
-RUN curl -s http://d3kbcqa49mib13.cloudfront.net/spark-1.3.0-bin-hadoop2.4.tgz | tar -xz -C /usr/local/
-RUN cd /usr/local && ln -s spark-1.3.0-bin-hadoop2.4 spark
+RUN curl -s http://d3kbcqa49mib13.cloudfront.net/spark-1.2.2-bin-hadoop2.4.tgz | tar -xz -C /usr/local/
+RUN cd /usr/local && ln -s spark-1.2.2-bin-hadoop2.4 spark
 
 # install cassandra
-ENV CASSANDRA_VERSION 2.1.8
-RUN apt-key adv --keyserver ha.pool.sks-keyservers.net --recv-keys 514A2AD631A57A16DD0047EC749D6EEC0353B12C
-RUN echo 'deb http://www.apache.org/dist/cassandra/debian 21x main' >> /etc/apt/sources.list.d/cassandra.list
-RUN apt-get update \
-	&& apt-get install -y cassandra="$CASSANDRA_VERSION" \
+ENV CASSANDRA_VERSION 2.1.9
+RUN apt-key adv --keyserver ha.pool.sks-keyservers.net --recv-keys 514A2AD631A57A16DD0047EC749D6EEC0353B12C && \
+ echo 'deb http://www.apache.org/dist/cassandra/debian 21x main' >> /etc/apt/sources.list.d/cassandra.list && \
+ apt-get update \
+	&& apt-get install -y --no-install-recommends cassandra="$CASSANDRA_VERSION" \
 	&& rm -rf /var/lib/apt/lists/*
 
 # copy some script to run spark
 COPY scripts/start-master.sh /start-master.sh
 COPY scripts/start-worker.sh /start-worker.sh
 COPY scripts/spark-shell.sh /spark-shell.sh
-COPY scripts/spark-cassandra-connector-assembly-1.3.0-RC1-SNAPSHOT.jar /spark-cassandra-connector-assembly-1.3.0-RC1-SNAPSHOT.jar
+COPY scripts/spark-cassandra-connector-java-assembly-1.2.5-SNAPSHOT.jar /spark-cassandra-connector-java-assembly-1.2.5-SNAPSHOT.jar
 COPY scripts/spark-defaults.conf /spark-defaults.conf
 
 # configure spark
